@@ -44,21 +44,21 @@ export function ShiftCalendar({
   const waiterMap = new Map(waiters.map((waiter) => [waiter.id, waiter]))
 
   return (
-    <section className="overflow-x-auto rounded-3xl bg-white/80 p-3 shadow-xl shadow-slate-200/60 ring-1 ring-slate-200/70 backdrop-blur-md md:p-4">
+    <section className="rounded-3xl bg-white/80 p-2 shadow-xl shadow-slate-200/60 ring-1 ring-slate-200/70 backdrop-blur-md sm:p-3 md:p-4">
       <h2 className="sr-only">Календарь смен</h2>
-      <div className="min-w-[700px] touch-pan-x">
-        <div className="mb-3 grid grid-cols-7 gap-2">
+      <div>
+        <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-3 sm:gap-2">
           {weekDays.map((weekDay) => (
             <div
               key={weekDay}
-              className="px-2 py-1 text-center text-xs font-semibold uppercase tracking-wider text-slate-500"
+              className="px-0.5 py-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:px-2 sm:text-xs"
             >
               {weekDay}
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {days.map((day) => {
             const dayKey = toDateKey(day)
             const dayWaiterIds = shiftsByDate[dayKey] ?? []
@@ -74,7 +74,7 @@ export function ShiftCalendar({
                 type="button"
                 onClick={() => onDaySelect(day)}
                 className={[
-                  'min-h-[7.5rem] rounded-2xl border p-2 text-left transition duration-200 sm:min-h-[8rem] sm:p-2.5',
+                  'min-h-[4.75rem] rounded-xl border p-1 text-left transition duration-200 sm:min-h-[8rem] sm:rounded-2xl sm:p-2.5',
                   isCurrentMonth
                     ? 'border-slate-200 bg-white/90 shadow-sm shadow-slate-100'
                     : 'border-slate-200/70 bg-slate-50/70',
@@ -85,51 +85,76 @@ export function ShiftCalendar({
                 <div className="flex items-center justify-between">
                   <span
                     className={[
-                      'text-sm font-semibold',
+                      'text-xs font-semibold sm:text-sm',
                       isCurrentMonth ? 'text-slate-800' : 'text-slate-400',
                     ].join(' ')}
                   >
                     {format(day, 'd')}
                   </span>
-                  {isToday(day) ? <span className="h-2 w-2 rounded-full bg-sky-500" /> : null}
+                  {isToday(day) ? <span className="h-1.5 w-1.5 rounded-full bg-sky-500 sm:h-2 sm:w-2" /> : null}
                 </div>
 
-                <p className="mt-1 text-[10px] font-medium text-slate-400">
+                <p className="mt-0.5 text-[9px] font-medium text-slate-400 sm:mt-1 sm:text-[10px]">
                   {capitalize(format(day, 'EEE', { locale: ru }))}
                 </p>
 
-                <div className="mt-2 space-y-1">
+                <div className="mt-1 space-y-1 sm:mt-2">
                   {dayWaiterIds.length === 0 ? (
-                    <p className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-400">
-                      Нет смен
-                    </p>
+                    <>
+                      <p className="rounded-md bg-slate-100 px-1 py-0.5 text-center text-[9px] font-medium text-slate-400 sm:hidden">
+                        -
+                      </p>
+                      <p className="hidden rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-400 sm:block">
+                        Нет смен
+                      </p>
+                    </>
                   ) : (
                     <>
-                      {dayWaiterIds.slice(0, 3).map((waiterId) => {
-                        const waiter = waiterMap.get(waiterId)
+                      <div className="flex flex-wrap gap-1 sm:hidden">
+                        {dayWaiterIds.slice(0, 4).map((waiterId) => {
+                          const waiter = waiterMap.get(waiterId)
 
-                        if (!waiter) {
-                          return null
-                        }
+                          if (!waiter) {
+                            return null
+                          }
 
-                        return (
-                          <span
-                            key={`${dayKey}-${waiter.id}`}
-                            className="inline-flex w-full items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-700"
-                          >
+                          return (
                             <span
+                              key={`${dayKey}-dot-${waiter.id}`}
                               className="h-1.5 w-1.5 rounded-full"
                               style={{ backgroundColor: waiter.color }}
                             />
-                            <span className="truncate">{waiter.name}</span>
-                          </span>
-                        )
-                      })}
-                      {dayWaiterIds.length > 3 ? (
-                        <p className="px-2 text-[10px] font-medium text-slate-500">
-                          +{dayWaiterIds.length - 3} еще
-                        </p>
-                      ) : null}
+                          )
+                        })}
+                      </div>
+
+                      <div className="hidden space-y-1 sm:block">
+                        {dayWaiterIds.slice(0, 3).map((waiterId) => {
+                          const waiter = waiterMap.get(waiterId)
+
+                          if (!waiter) {
+                            return null
+                          }
+
+                          return (
+                            <span
+                              key={`${dayKey}-${waiter.id}`}
+                              className="inline-flex w-full items-center gap-1.5 rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-medium text-slate-700"
+                            >
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ backgroundColor: waiter.color }}
+                              />
+                              <span className="truncate">{waiter.name}</span>
+                            </span>
+                          )
+                        })}
+                        {dayWaiterIds.length > 3 ? (
+                          <p className="px-2 text-[10px] font-medium text-slate-500">
+                            +{dayWaiterIds.length - 3} еще
+                          </p>
+                        ) : null}
+                      </div>
                     </>
                   )}
                 </div>
