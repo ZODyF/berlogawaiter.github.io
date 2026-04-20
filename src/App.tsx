@@ -77,10 +77,10 @@ function App() {
                 Расписание официантов
               </p>
               <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
-                Shift Board
+                Board of Shifts
               </h1>
               <p className="mt-1 text-sm text-slate-500">
-                Простой календарь смен без авторизации с общей облачной синхронизацией
+                Календарь смен BeerlogaGrillBar
               </p>
               <p
                 className={[
@@ -91,8 +91,8 @@ function App() {
                 ].join(' ')}
               >
                 {syncMode === 'cloud'
-                  ? 'Общий режим: изменения видны всем пользователям.'
-                  : 'Локальный режим: добавьте Firebase env-переменные для общего сохранения.'}
+                  ? ''
+                  : 'Ошибка сука, ахтунг бля, нихуя не работает, почини нахуй, я твой конфиг ебал, блянахуй!'}
               </p>
               {syncMode === 'local' && syncConfigIssue ? (
                 <p className="mt-2 text-xs font-semibold text-amber-700">{syncConfigIssue}</p>
