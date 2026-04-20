@@ -79,7 +79,7 @@ Settings -> Secrets and variables -> Actions -> New repository variable.
 
 После следующего push в `main` сайт на GitHub Pages начнет использовать общее облачное хранилище.
 
-Если переменные были добавлены позже, запустите workflow Deploy to GitHub Pages заново через Actions.
+Есл	 позже, запустите workflow Deploy to GitHub Pages заново через Actions.
 
 ## Полезные команды
 
