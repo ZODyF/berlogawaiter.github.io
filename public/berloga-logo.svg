@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 768 768" role="img" aria-label="Berloga Shift logo">
+  <defs>
+    <path id="top-arc" d="M 80 360 A 304 304 0 0 1 688 360" />
+    <path id="bottom-arc" d="M 688 410 A 304 304 0 0 1 80 410" />
+    <filter id="soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.4" />
+    </filter>
+  </defs>
+
+  <rect width="768" height="768" fill="#020617" />
+
+  <text fill="#f8fafc" font-family="Georgia, 'Times New Roman', serif" font-size="86" letter-spacing="6">
+    <textPath href="#top-arc" startOffset="50%" text-anchor="middle">BEERLOGA</textPath>
+  </text>
+
+  <text fill="#f8fafc" font-family="Georgia, 'Times New Roman', serif" font-size="84" letter-spacing="2">
+    <textPath href="#bottom-arc" startOffset="50%" text-anchor="middle">WaiterShifts</textPath>
+  </text>
+
+  <g fill="none" stroke="#f8fafc" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft-shadow)">
+    <path d="M 244 474 L 384 614 L 524 474" />
+    <path d="M 224 350 L 356 478" />
+    <path d="M 544 350 L 412 478" />
+  </g>
+
+  <g fill="none" stroke="#f8fafc" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" filter="url(#soft-shadow)">
+    <path d="M 186 300 L 266 380" />
+    <path d="M 206 282 L 286 362" />
+    <path d="M 226 264 L 306 344" />
+    <path d="M 246 246 L 326 326" />
+
+    <path d="M 582 246 L 502 326" />
+    <path d="M 614 264 L 534 344" />
+    <path d="M 646 282 L 566 362" />
+  </g>
+
+  <path
+    fill="#f8fafc"
+    d="M 384 282 C 356 316 353 338 369 360 C 338 352 318 372 322 399 C 326 430 354 448 384 439 C 414 448 442 430 446 399 C 450 372 430 352 399 360 C 415 338 412 316 384 282 Z"
+    filter="url(#soft-shadow)"
+  />
+</svg>
