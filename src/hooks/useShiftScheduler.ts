@@ -1,4 +1,6 @@
 import { addDays, addMonths, endOfMonth, format, isWeekend, startOfMonth } from 'date-fns'
+import { getApp, getApps, initializeApp } from 'firebase/app'
+import { getDatabase, onValue, ref, set, type DatabaseReference } from 'firebase/database'
 import { useEffect, useState } from 'react'
 import type { ShiftsByDate, Waiter } from '../types'
 
@@ -7,6 +9,37 @@ const SHIFTS_STORAGE_KEY = 'waiter-shift-calendar.shifts.v1'
 
 const WAITER_COLORS = ['#0ea5e9', '#14b8a6', '#f59e0b', '#ef4444', '#6366f1', '#10b981']
 const DEFAULT_WAITER_NAMES = ['Анна', 'Максим', 'София', 'Илья', 'Ева']
+
+type SyncMode = 'cloud' | 'local'
+
+function createSharedScheduleRef(): DatabaseReference | null {
+  const firebaseConfig = {
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  }
+
+  const hasAllConfig = Object.values(firebaseConfig).every(
+    (value) => typeof value === 'string' && value.length > 0,
+  )
+
+  if (!hasAllConfig) {
+    return null
+  }
+
+  try {
+    const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
+    return ref(getDatabase(app), 'waiterShiftCalendar/sharedSchedule')
+  } catch {
+    return null
+  }
+}
+
+const sharedScheduleRef = createSharedScheduleRef()
 
 function toSafeJson<T>(raw: string | null, fallback: T): T {
   if (!raw) {
@@ -135,12 +168,74 @@ export function useShiftScheduler() {
 
   const [waiters, setWaiters] = useState<Waiter[]>(initialWaiters)
   const [shiftsByDate, setShiftsByDate] = useState<ShiftsByDate>(initialShifts)
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  const syncMode: SyncMode = sharedScheduleRef ? 'cloud' : 'local'
+
+  const syncCloudState = (nextWaiters: Waiter[], nextShiftsByDate: ShiftsByDate) => {
+    if (!sharedScheduleRef) {
+      return
+    }
+
+    void set(sharedScheduleRef, {
+      waiters: nextWaiters,
+      shiftsByDate: nextShiftsByDate,
+      updatedAt: Date.now(),
+    })
+      .then(() => {
+        setSyncError(null)
+      })
+      .catch(() => {
+        setSyncError('Не удалось синхронизировать смены с облаком.')
+      })
+  }
 
   useEffect(() => {
+    if (!sharedScheduleRef) {
+      return
+    }
+
+    const unsubscribe = onValue(
+      sharedScheduleRef,
+      (snapshot) => {
+        const value = snapshot.val() as {
+          waiters?: unknown
+          shiftsByDate?: unknown
+        } | null
+
+        if (!value) {
+          syncCloudState(initialWaiters, initialShifts)
+          return
+        }
+
+        const nextWaiters = normalizeWaiters(value.waiters)
+        const nextShifts = normalizeShifts(value.shiftsByDate)
+
+        setWaiters(nextWaiters.length > 0 ? nextWaiters : initialWaiters)
+        setShiftsByDate(nextShifts)
+        setSyncError(null)
+      },
+      () => {
+        setSyncError('Не удалось получить данные из облака.')
+      },
+    )
+
+    return () => unsubscribe()
+  }, [initialShifts, initialWaiters])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     window.localStorage.setItem(WAITERS_STORAGE_KEY, JSON.stringify(waiters))
   }, [waiters])
 
   useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
     window.localStorage.setItem(SHIFTS_STORAGE_KEY, JSON.stringify(shiftsByDate))
   }, [shiftsByDate])
 
@@ -161,42 +256,47 @@ export function useShiftScheduler() {
       color: WAITER_COLORS[waiters.length % WAITER_COLORS.length],
     }
 
-    setWaiters((previous) => [...previous, waiter])
+    const nextWaiters = [...waiters, waiter]
+    setWaiters(nextWaiters)
+    syncCloudState(nextWaiters, shiftsByDate)
     return true
   }
 
   const removeWaiter = (waiterId: string) => {
-    setWaiters((previous) => previous.filter((waiter) => waiter.id !== waiterId))
-    setShiftsByDate((previous) => {
-      const next: ShiftsByDate = {}
+    const nextWaiters = waiters.filter((waiter) => waiter.id !== waiterId)
+    const nextShifts: ShiftsByDate = {}
 
-      for (const [dateKey, waiterIds] of Object.entries(previous)) {
-        next[dateKey] = waiterIds.filter((id) => id !== waiterId)
-      }
+    for (const [dateKey, waiterIds] of Object.entries(shiftsByDate)) {
+      nextShifts[dateKey] = waiterIds.filter((id) => id !== waiterId)
+    }
 
-      return next
-    })
+    setWaiters(nextWaiters)
+    setShiftsByDate(nextShifts)
+    syncCloudState(nextWaiters, nextShifts)
   }
 
   const toggleShiftForDate = (dateKey: string, waiterId: string) => {
-    setShiftsByDate((previous) => {
-      const dayShifts = previous[dateKey] ?? []
-      const hasShift = dayShifts.includes(waiterId)
+    const dayShifts = shiftsByDate[dateKey] ?? []
+    const hasShift = dayShifts.includes(waiterId)
 
-      const nextDayShifts = hasShift
-        ? dayShifts.filter((id) => id !== waiterId)
-        : [...dayShifts, waiterId]
+    const nextDayShifts = hasShift
+      ? dayShifts.filter((id) => id !== waiterId)
+      : [...dayShifts, waiterId]
 
-      return {
-        ...previous,
-        [dateKey]: nextDayShifts,
-      }
-    })
+    const nextShifts = {
+      ...shiftsByDate,
+      [dateKey]: nextDayShifts,
+    }
+
+    setShiftsByDate(nextShifts)
+    syncCloudState(waiters, nextShifts)
   }
 
   return {
     waiters,
     shiftsByDate,
+    syncMode,
+    syncError,
     addWaiter,
     removeWaiter,
     toggleShiftForDate,

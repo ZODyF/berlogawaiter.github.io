@@ -30,8 +30,15 @@ function App() {
   const [selectedWaiterId, setSelectedWaiterId] = useState(ALL_WAITERS_FILTER)
   const [newWaiterName, setNewWaiterName] = useState('')
 
-  const { waiters, shiftsByDate, addWaiter, removeWaiter, toggleShiftForDate } =
-    useShiftScheduler()
+  const {
+    waiters,
+    shiftsByDate,
+    syncMode,
+    syncError,
+    addWaiter,
+    removeWaiter,
+    toggleShiftForDate,
+  } = useShiftScheduler()
 
   const monthTitle = useMemo(
     () => capitalize(format(monthDate, 'LLLL yyyy', { locale: ru })),
@@ -72,8 +79,23 @@ function App() {
                 Shift Board
               </h1>
               <p className="mt-1 text-sm text-slate-500">
-                Простой календарь смен без авторизации и без бэкенда
+                Простой календарь смен без авторизации с общей облачной синхронизацией
               </p>
+              <p
+                className={[
+                  'mt-2 inline-flex rounded-full px-3 py-1 text-xs font-semibold',
+                  syncMode === 'cloud'
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-amber-50 text-amber-700',
+                ].join(' ')}
+              >
+                {syncMode === 'cloud'
+                  ? 'Общий режим: изменения видны всем пользователям.'
+                  : 'Локальный режим: добавьте Firebase env-переменные для общего сохранения.'}
+              </p>
+              {syncError ? (
+                <p className="mt-2 text-xs font-semibold text-red-600">{syncError}</p>
+              ) : null}
             </div>
 
             <div className="inline-flex rounded-2xl bg-slate-100 p-1">
