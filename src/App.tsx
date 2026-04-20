@@ -28,6 +28,7 @@ function App() {
   const [monthDate, setMonthDate] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedWaiterId, setSelectedWaiterId] = useState(ALL_WAITERS_FILTER)
+  const [quickAssignWaiterId, setQuickAssignWaiterId] = useState(ALL_WAITERS_FILTER)
   const [newWaiterName, setNewWaiterName] = useState('')
 
   const {
@@ -65,6 +66,19 @@ function App() {
     if (selectedWaiterId === waiterId) {
       setSelectedWaiterId(ALL_WAITERS_FILTER)
     }
+
+    if (quickAssignWaiterId === waiterId) {
+      setQuickAssignWaiterId(ALL_WAITERS_FILTER)
+    }
+  }
+
+  const handleDayClick = (day: Date) => {
+    if (mode === 'admin' && quickAssignWaiterId !== ALL_WAITERS_FILTER) {
+      toggleShiftForDate(toDateKey(day), quickAssignWaiterId)
+      return
+    }
+
+    setSelectedDate(day)
   }
 
   return (
@@ -91,8 +105,8 @@ function App() {
                 ].join(' ')}
               >
                 {syncMode === 'cloud'
-                  ? ''
-                  : 'Ошибка сука, ахтунг бля, нихуя не работает, почини нахуй, я твой конфиг ебал, блянахуй!'}
+                  ? 'Общий режим: изменения видны всем пользователям.'
+                  : 'Локальный режим: добавьте Firebase env-переменные для общего сохранения.'}
               </p>
               {syncMode === 'local' && syncConfigIssue ? (
                 <p className="mt-2 text-xs font-semibold text-amber-700">{syncConfigIssue}</p>
@@ -182,9 +196,26 @@ function App() {
                 </select>
               </label>
             ) : (
-              <p className="rounded-2xl bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800">
-                Кликните по дню в календаре, чтобы назначить или снять смену
-              </p>
+              <div className="flex w-full max-w-md flex-col gap-1.5">
+                <label className="flex flex-col gap-1.5 text-xs font-semibold uppercase tracking-[0.1em] text-teal-700">
+                  Быстрое назначение по клику
+                  <select
+                    value={quickAssignWaiterId}
+                    onChange={(event) => setQuickAssignWaiterId(event.target.value)}
+                    className="h-11 rounded-xl border border-teal-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-teal-400 focus:ring-2 focus:ring-teal-200"
+                  >
+                    <option value={ALL_WAITERS_FILTER}>Выберите официанта</option>
+                    {waiters.map((waiter) => (
+                      <option key={waiter.id} value={waiter.id}>
+                        {waiter.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="rounded-2xl bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800">
+                  Выберите официанта и нажимайте на день, чтобы сразу поставить или снять смену.
+                </p>
+              </div>
             )}
           </div>
         </header>
@@ -250,8 +281,8 @@ function App() {
           monthDate={monthDate}
           waiters={waiters}
           shiftsByDate={shiftsByDate}
-          selectedWaiterId={selectedWaiterId}
-          onDaySelect={setSelectedDate}
+          selectedWaiterId={mode === 'view' ? selectedWaiterId : quickAssignWaiterId}
+          onDaySelect={handleDayClick}
         />
       </div>
 

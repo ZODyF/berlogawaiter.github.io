@@ -33,11 +33,11 @@ function capitalize(value: string): string {
 function compactWaiterName(name: string): string {
   const firstName = name.trim().split(' ')[0] ?? ''
 
-  if (firstName.length <= 4) {
+  if (firstName.length <= 3) {
     return firstName
   }
 
-  return `${firstName.slice(0, 4)}.`
+  return `${firstName.slice(0, 3)}.`
 }
 
 export function ShiftCalendar({
@@ -54,10 +54,10 @@ export function ShiftCalendar({
   const waiterMap = new Map(waiters.map((waiter) => [waiter.id, waiter]))
 
   return (
-    <section className="rounded-3xl bg-white/80 p-2 shadow-xl shadow-slate-200/60 ring-1 ring-slate-200/70 backdrop-blur-md sm:p-3 md:p-4">
+    <section className="rounded-3xl bg-white/80 p-1 shadow-xl shadow-slate-200/60 ring-1 ring-slate-200/70 backdrop-blur-md sm:p-3 md:p-4">
       <h2 className="sr-only">Календарь смен</h2>
       <div>
-        <div className="mb-2 grid grid-cols-7 gap-1 sm:mb-3 sm:gap-2">
+        <div className="mb-2 grid grid-cols-7 gap-0.5 sm:mb-3 sm:gap-2">
           {weekDays.map((weekDay) => (
             <div
               key={weekDay}
@@ -68,7 +68,7 @@ export function ShiftCalendar({
           ))}
         </div>
 
-        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-2">
           {days.map((day) => {
             const dayKey = toDateKey(day)
             const dayWaiterIds = shiftsByDate[dayKey] ?? []
@@ -84,7 +84,7 @@ export function ShiftCalendar({
                 type="button"
                 onClick={() => onDaySelect(day)}
                 className={[
-                  'min-h-[5.25rem] rounded-xl border p-1 text-left transition duration-200 sm:min-h-[8rem] sm:rounded-2xl sm:p-2.5',
+                  'min-h-[5.35rem] rounded-xl border p-1 text-left transition duration-200 sm:min-h-[8rem] sm:rounded-2xl sm:p-2.5',
                   isCurrentMonth
                     ? 'border-slate-200 bg-white/90 shadow-sm shadow-slate-100'
                     : 'border-slate-200/70 bg-slate-50/70',
@@ -120,8 +120,8 @@ export function ShiftCalendar({
                     </>
                   ) : (
                     <>
-                      <div className="space-y-0.5 sm:hidden">
-                        {dayWaiterIds.slice(0, 2).map((waiterId) => {
+                      <div className="flex flex-wrap gap-0.5 sm:hidden">
+                        {dayWaiterIds.slice(0, 4).map((waiterId) => {
                           const waiter = waiterMap.get(waiterId)
 
                           if (!waiter) {
@@ -129,23 +129,23 @@ export function ShiftCalendar({
                           }
 
                           return (
-                            <p
+                            <span
                               key={`${dayKey}-mobile-${waiter.id}`}
-                              className="inline-flex w-full items-center gap-1 rounded-md bg-slate-100 px-1 py-0.5 text-[8px] font-semibold text-slate-700"
+                              className="inline-flex items-center gap-0.5 rounded-md bg-slate-100 px-1 py-0.5 text-[7px] font-semibold text-slate-700"
                             >
                               <span
                                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                                 style={{ backgroundColor: waiter.color }}
                               />
                               <span className="truncate">{compactWaiterName(waiter.name)}</span>
-                            </p>
+                            </span>
                           )
                         })}
 
-                        {dayWaiterIds.length > 2 ? (
-                          <p className="text-center text-[8px] font-semibold text-slate-500">
-                            +{dayWaiterIds.length - 2}
-                          </p>
+                        {dayWaiterIds.length > 4 ? (
+                          <span className="inline-flex items-center rounded-md bg-slate-100 px-1 py-0.5 text-[7px] font-semibold text-slate-500">
+                            +{dayWaiterIds.length - 4}
+                          </span>
                         ) : null}
                       </div>
 
