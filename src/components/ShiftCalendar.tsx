@@ -30,6 +30,16 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+function compactWaiterName(name: string): string {
+  const firstName = name.trim().split(' ')[0] ?? ''
+
+  if (firstName.length <= 4) {
+    return firstName
+  }
+
+  return `${firstName.slice(0, 4)}.`
+}
+
 export function ShiftCalendar({
   monthDate,
   waiters,
@@ -74,7 +84,7 @@ export function ShiftCalendar({
                 type="button"
                 onClick={() => onDaySelect(day)}
                 className={[
-                  'min-h-[4.75rem] rounded-xl border p-1 text-left transition duration-200 sm:min-h-[8rem] sm:rounded-2xl sm:p-2.5',
+                  'min-h-[5.25rem] rounded-xl border p-1 text-left transition duration-200 sm:min-h-[8rem] sm:rounded-2xl sm:p-2.5',
                   isCurrentMonth
                     ? 'border-slate-200 bg-white/90 shadow-sm shadow-slate-100'
                     : 'border-slate-200/70 bg-slate-50/70',
@@ -110,8 +120,8 @@ export function ShiftCalendar({
                     </>
                   ) : (
                     <>
-                      <div className="flex flex-wrap gap-1 sm:hidden">
-                        {dayWaiterIds.slice(0, 4).map((waiterId) => {
+                      <div className="space-y-0.5 sm:hidden">
+                        {dayWaiterIds.slice(0, 2).map((waiterId) => {
                           const waiter = waiterMap.get(waiterId)
 
                           if (!waiter) {
@@ -119,13 +129,24 @@ export function ShiftCalendar({
                           }
 
                           return (
-                            <span
-                              key={`${dayKey}-dot-${waiter.id}`}
-                              className="h-1.5 w-1.5 rounded-full"
-                              style={{ backgroundColor: waiter.color }}
-                            />
+                            <p
+                              key={`${dayKey}-mobile-${waiter.id}`}
+                              className="inline-flex w-full items-center gap-1 rounded-md bg-slate-100 px-1 py-0.5 text-[8px] font-semibold text-slate-700"
+                            >
+                              <span
+                                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: waiter.color }}
+                              />
+                              <span className="truncate">{compactWaiterName(waiter.name)}</span>
+                            </p>
                           )
                         })}
+
+                        {dayWaiterIds.length > 2 ? (
+                          <p className="text-center text-[8px] font-semibold text-slate-500">
+                            +{dayWaiterIds.length - 2}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="hidden space-y-1 sm:block">
