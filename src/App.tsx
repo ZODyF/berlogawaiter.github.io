@@ -34,6 +34,7 @@ function App() {
     waiters,
     shiftsByDate,
     syncMode,
+    syncConfigIssue,
     syncError,
     addWaiter,
     removeWaiter,
@@ -93,6 +94,9 @@ function App() {
                   ? 'Общий режим: изменения видны всем пользователям.'
                   : 'Локальный режим: добавьте Firebase env-переменные для общего сохранения.'}
               </p>
+              {syncMode === 'local' && syncConfigIssue ? (
+                <p className="mt-2 text-xs font-semibold text-amber-700">{syncConfigIssue}</p>
+              ) : null}
               {syncError ? (
                 <p className="mt-2 text-xs font-semibold text-red-600">{syncError}</p>
               ) : null}

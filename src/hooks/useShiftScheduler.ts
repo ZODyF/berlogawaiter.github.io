@@ -12,34 +12,98 @@ const DEFAULT_WAITER_NAMES = ['Анна', 'Максим', 'София', 'Иль�
 
 type SyncMode = 'cloud' | 'local'
 
-function createSharedScheduleRef(): DatabaseReference | null {
-  const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+type CloudConfigStatus = {
+  ref: DatabaseReference | null
+  missingEnvKeys: string[]
+  initError: string | null
+}
+
+const FIREBASE_ENV_KEYS = {
+  apiKey: 'VITE_FIREBASE_API_KEY',
+  authDomain: 'VITE_FIREBASE_AUTH_DOMAIN',
+  databaseURL: 'VITE_FIREBASE_DATABASE_URL',
+  projectId: 'VITE_FIREBASE_PROJECT_ID',
+  storageBucket: 'VITE_FIREBASE_STORAGE_BUCKET',
+  messagingSenderId: 'VITE_FIREBASE_MESSAGING_SENDER_ID',
+  appId: 'VITE_FIREBASE_APP_ID',
+} as const
+
+function normalizeEnvValue(value: unknown): string {
+  if (typeof value !== 'string') {
+    return ''
   }
 
-  const hasAllConfig = Object.values(firebaseConfig).every(
-    (value) => typeof value === 'string' && value.length > 0,
-  )
+  const trimmed = value.trim()
 
-  if (!hasAllConfig) {
-    return null
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim()
+  }
+
+  return trimmed
+}
+
+function createSharedScheduleRef(): CloudConfigStatus {
+  const firebaseConfig = {
+    apiKey: normalizeEnvValue(import.meta.env.VITE_FIREBASE_API_KEY),
+    authDomain: normalizeEnvValue(import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+    databaseURL: normalizeEnvValue(import.meta.env.VITE_FIREBASE_DATABASE_URL),
+    projectId: normalizeEnvValue(import.meta.env.VITE_FIREBASE_PROJECT_ID),
+    storageBucket: normalizeEnvValue(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+    messagingSenderId: normalizeEnvValue(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+    appId: normalizeEnvValue(import.meta.env.VITE_FIREBASE_APP_ID),
+  }
+
+  const missingEnvKeys = Object.entries(FIREBASE_ENV_KEYS)
+    .filter(([firebaseConfigKey]) => {
+      const configKey = firebaseConfigKey as keyof typeof firebaseConfig
+      return firebaseConfig[configKey].length === 0
+    })
+    .map(([, envKey]) => envKey)
+
+  if (missingEnvKeys.length > 0) {
+    return {
+      ref: null,
+      missingEnvKeys,
+      initError: null,
+    }
   }
 
   try {
     const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
-    return ref(getDatabase(app), 'waiterShiftCalendar/sharedSchedule')
-  } catch {
-    return null
+    return {
+      ref: ref(getDatabase(app), 'waiterShiftCalendar/sharedSchedule'),
+      missingEnvKeys: [],
+      initError: null,
+    }
+  } catch (error) {
+    return {
+      ref: null,
+      missingEnvKeys: [],
+      initError:
+        error instanceof Error && error.message.length > 0
+          ? error.message
+          : 'Не удалось инициализировать Firebase.',
+    }
   }
 }
 
-const sharedScheduleRef = createSharedScheduleRef()
+const cloudConfigStatus = createSharedScheduleRef()
+const sharedScheduleRef = cloudConfigStatus.ref
+
+function getSyncConfigIssue(): string | null {
+  if (cloudConfigStatus.missingEnvKeys.length > 0) {
+    return `Не найдены env-переменные: ${cloudConfigStatus.missingEnvKeys.join(', ')}`
+  }
+
+  if (cloudConfigStatus.initError) {
+    return `Ошибка Firebase: ${cloudConfigStatus.initError}`
+  }
+
+  return null
+}
 
 function toSafeJson<T>(raw: string | null, fallback: T): T {
   if (!raw) {
@@ -168,7 +232,7 @@ export function useShiftScheduler() {
 
   const [waiters, setWaiters] = useState<Waiter[]>(initialWaiters)
   const [shiftsByDate, setShiftsByDate] = useState<ShiftsByDate>(initialShifts)
-  const [syncError, setSyncError] = useState<string | null>(null)
+  const [syncError, setSyncError] = useState<string | null>(getSyncConfigIssue())
 
   const syncMode: SyncMode = sharedScheduleRef ? 'cloud' : 'local'
 
@@ -297,6 +361,7 @@ export function useShiftScheduler() {
     shiftsByDate,
     syncMode,
     syncError,
+    syncConfigIssue: getSyncConfigIssue(),
     addWaiter,
     removeWaiter,
     toggleShiftForDate,

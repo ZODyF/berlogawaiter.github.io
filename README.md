@@ -58,6 +58,7 @@ npm run dev
 
 1. Скопируйте `.env.example` в `.env`.
 2. Заполните значения из Firebase Web App config.
+3. Указывайте значения без кавычек.
 
 ```bash
 VITE_FIREBASE_API_KEY=
@@ -77,6 +78,8 @@ Settings -> Secrets and variables -> Actions -> New repository variable.
 Имена должны быть такими же, как в `.env.example`.
 
 После следующего push в `main` сайт на GitHub Pages начнет использовать общее облачное хранилище.
+
+Если переменные были добавлены позже, запустите workflow Deploy to GitHub Pages заново через Actions.
 
 ## Полезные команды
 
